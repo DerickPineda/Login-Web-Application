@@ -1,6 +1,7 @@
 package com.login.login.model;
 	
 import java.util.ArrayList;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,8 +33,10 @@ public class Person {
 	)
 	
 	/*From my understanding sequences are used to create unique values 
-	 * for primacy keys, in this case Person objects? which allows there to be 
+	 * for primary keys, in this case Person objects which allows there to be 
 	 * multiple transactions without having them get the same value  
+	 * 
+	 * In other words it is like an id for each person
 	 */
 	@GeneratedValue(
 		strategy = GenerationType.SEQUENCE,
@@ -48,6 +51,16 @@ public class Person {
 			columnDefinition = "TEXT"
 	)
 	private final String name;
+	
+	
+	@Column(
+			name = "person_id",
+			updatable = false,
+			nullable = false
+	)	
+	private UUID id;
+	
+
 	@Column(
 			name = "person_login_list",
 			nullable = true,
@@ -58,7 +71,9 @@ public class Person {
 
 	public Person(@JsonProperty("name") String name) {
 		this.name = name;
+		this.id = UUID.randomUUID();
 		loginsList = new ArrayList<LoginInformation>();
+		
 	}
 	
 
@@ -76,6 +91,22 @@ public class Person {
 	//Method to allow person to update their logins
 	public void updateLogin(LoginInformation login) {
 		loginsList.add(login);
+	}
+	
+	public UUID getId() {
+		return id;
+	}
+
+
+
+	public void setId(UUID id) {
+		this.id = id;
+	}
+	
+	
+	@Override
+	public String toString() {
+		return name + "\n" + id;
 	}
 	
 	
