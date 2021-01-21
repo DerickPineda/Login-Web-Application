@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
@@ -21,31 +22,32 @@ import com.login.login.model.Person;
 @Repository("personDataBase")
 public class PersonDataBase {
 	
-	private Map<Person, ArrayList<LoginInformation>> logins = new HashMap<Person, ArrayList<LoginInformation>>();
+	private Map<UUID, Person> logins = new HashMap<UUID, Person>();
 	
 	
 	
 	//Method to add person to hashmap
-	public boolean addPerson(Person person) {
-		
+	public void addPerson(Person person) {
+		Person newPerson = new Person(person.getName());
 		//Check to see if the person is already in the data base, if not put them in and return true
 		//Map the Person object(Key) to the ArrayList(value)
-		logins.putIfAbsent(person,person.getLoginsList());
-		return true;
+		logins.put(newPerson.getId(),newPerson);
 		
 	}
 	
 	//Method to return all the people with logins in data base
+	//Will also return their id's with the names
 	public String[] getPeopleInDataBase(){
 		//Get a set containing all the keys from logins(Person objects)
-		Set<Person> loginsKeys = logins.keySet();
+		Set<UUID> loginsKeys = logins.keySet();
 		//Create an array of Person objects from the set
-		Person[] personNames = loginsKeys.toArray(new Person[loginsKeys.size()]);
+		UUID[] keys = loginsKeys.toArray(new UUID[loginsKeys.size()]);
 		
-		//Iterate through and get all the names and put them into another array of String
-		String[] names = new String[personNames.length];
+		//Iterate through and get all the names/ids and put them into another array of String
+		String[] names = new String[keys.length];
 		for(int i = 0; i < names.length; i++) {
-			names[i] = personNames[i].getName();
+			names[i] = logins.get(keys[i]).toString();
+					
 		}
 		
 		//return names[] which contains all the names of the users in the database 
@@ -54,11 +56,11 @@ public class PersonDataBase {
 	
 	
 	//Method to return the login information for someone 
-	public String[] getLoginInformation(Person person){
+	public String[] getLoginInformation(UUID id){
 		//Get ArrayList of person object logins and store them into an ArrayList
-		ArrayList<LoginInformation> personLogins = logins.get(person);
+		ArrayList<LoginInformation> personLogins = logins.get(id).getLoginsList();
 		//Check if ArrayList is empty, if so then return a String[] = {"empty"}
-		if(personLogins.equals(null)) {
+		if(personLogins.size() == 0){
 			String[] loginIsEmpty = {"empty"};
 			return loginIsEmpty;
 		}
@@ -77,16 +79,10 @@ public class PersonDataBase {
 	
 	
 	//Method to add new login information 
-	public void updateLoginInformation(Person person, LoginInformation login) {
+	public void updateLoginInformation(UUID id, LoginInformation login) {
 		//Login is defined as an String email, String username, String password 
-		
 		//update the person object's private login list
-		person.updateLogin(login);
-
-		//then add it to the logins hashmap ArrayList<LoginInformation> by replacing it until
-		//I find a better way 
-		logins.putIfAbsent(person,person.getLoginsList());
-		System.out.println("\n\n\nIn person data base, the new array list is " + person.getLoginsList().toString());
-		System.out.println("\n\n\n\nFrom hashmap: " + logins.get(person).toString());
+		logins.get(id).updateLogin(login);
+		
 	}
 }
