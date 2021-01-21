@@ -1,6 +1,7 @@
 package com.login.login.api;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,11 +33,10 @@ public class PersonController {
 		personService.insertPerson(person);
 	}
 	
-	// POST Method to put in new login information for a person
-	@PutMapping(path = "{person}")
-	public void updateLoginInformation(@PathVariable("person") Person person, @RequestBody LoginInformation login) {
-		System.out.println("in controller, will update for " + person.getName());
-		personService.updateLoginInformation(person, login);
+	//PUT Method to put in new login information for a person
+	@PutMapping(path = "{id}")
+	public void updateLoginInformation(@PathVariable("id") UUID id, @RequestBody LoginInformation login) {
+		personService.updateLoginInformation(id, login);
 	}
 	
 	//GET method to get a person from the data base 
@@ -46,9 +46,8 @@ public class PersonController {
 	}
 	
 	// GET Method to retrieve someone's login info
-	@GetMapping(path = "{person}")
-	public String[] getLoginInformation(@PathVariable("person") Person person) {
-		System.out.println("\n\nIn person controller");
-		return personService.getLoginInformation(person);
+	@GetMapping(path = "{id}")
+	public String[] getLoginInformation(@PathVariable("id") UUID id) {	
+		return personService.getLoginInformation(id);
 	}
 }
