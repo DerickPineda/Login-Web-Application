@@ -1,6 +1,7 @@
 package com.login.login.service;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +18,10 @@ import com.login.login.model.Person;
  * 
  * Using @Autowired for injection
  * 
- * @Qualifier helps distinguish the different implementations of PersonService objects?
+ * @Qualifier helps in letting you change between different implementations
+ * For example, it is currently set to "personDataBase" which is the repository in my PersonDataBase class.
+ * If I'm understanding this correctly, assuming I had another class with the repository name "personDataBaseV2"
+ * then I could just change the qualifier input to "personDataBaseV2" and this class would then be a service  for that class
  */
 
 @Service
@@ -44,9 +48,8 @@ public class PersonService {
 		personDataBase.addPerson(person);
 	}
 	
-	public void updateLoginInformation(Person person, LoginInformation login) {
-		System.out.println("in person service, will update for " + person.getName() + "\nlogin update: " +login.toString());
-		personDataBase.updateLoginInformation(person, login);
+	public void updateLoginInformation(UUID id, LoginInformation login) {
+		personDataBase.updateLoginInformation(id, login);
 	}
 	
 	public String[] getListOfUsers() {
@@ -55,9 +58,8 @@ public class PersonService {
 	
 	
 	//Method that will return the login information for a person
-	public String[] getLoginInformation(Person person){
-		System.out.println("in person service for " + person.getName());
-		return personDataBase.getLoginInformation(person);
+	public String[] getLoginInformation(UUID id){
+		return personDataBase.getLoginInformation(id);
 	}
 	
 	
