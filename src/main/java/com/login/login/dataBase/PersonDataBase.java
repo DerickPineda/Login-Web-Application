@@ -1,5 +1,11 @@
 package com.login.login.dataBase;
 
+import com.login.login.dataBase.App;
+
+import java.sql.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -7,6 +13,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+import org.json.simple.JSONArray;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,19 +36,65 @@ import com.login.login.model.Person;
  * @Repository allows us to have multiple implementations/it instantiates the object 
  */
 @Repository("personDataBase")
-public class PersonDataBase {
-	
+public class PersonDataBase {	
+	/*
+	 * @Id
+	 * 
+	 * @SequenceGenerator( name = "login_data_sequence", sequenceName =
+	 * "login_data_sequence" )
+	 * 
+	 * @GeneratedValue( strategy = GenerationType.SEQUENCE, generator =
+	 * "login_data_sequence" )
+	 * 
+	 * @ElementCollection
+	 */
+	//Am currently implementing adding the people/logins to the actual database
+	//Leaving this here for now
 	private Map<UUID, Person> logins = new HashMap<UUID, Person>();
 	
+	private App app = new App();
 	
-	
-	//Method to add person to hashmap
+	//Method to add person to database
 	public void addPerson(Person person) {
-		Person newPerson = new Person(person.getName());
-		//Check to see if the person is already in the data base, if not put them in and return true
-		//Map the Person object(Key) to the ArrayList(value)
-		logins.put(newPerson.getId(),newPerson);
 		
+		//Create a person object to make sure the id is created
+		//This might be a bit redundant
+		Person tempPerson = new Person(person.getName(), person.getEmail(), person.getPassword());
+		
+		String sql = "INSERT INTO person(person_name, person_email, person_id, person_login_list, "
+				+ "person_password) VALUES(?,?,?,?,?)"; 
+		
+		/*
+		 * We will take the Person objects Arraylist and turn it into a String[]
+		 * which will then be passed into the DB
+		 */
+		ArrayList<LoginInformation> tempArray = person.getLoginsList();
+		String[] newLoginList = new String[tempArray.size()];
+		
+		for(int i = 0; i < tempArray.size(); i++) {
+			newLoginList[i] = tempArray.get(i).toString();
+		}
+		
+		try {
+			//Establish a connection with the database
+			Connection connect = app.connect();
+			//Using the connnection, make a prepared statement(used to send postgreSQL query/commands)
+			//Send the statement to the database
+			PreparedStatement p = connect.prepareStatement(sql);
+			
+			//add the values into the statement 
+			p.setString(1, tempPerson.getName());
+			p.setString(2, tempPerson.getEmail());
+			p.setObject(3, tempPerson.getId());
+			p.setObject(4, newLoginList);
+			p.setString(5, tempPerson.getPassword());
+			
+			//Execute the query
+			p.executeUpdate();
+			
+		}catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 	
 	//Method to return all the people with logins in data base
