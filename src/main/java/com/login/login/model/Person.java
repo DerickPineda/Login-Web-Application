@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * In the data base 
  */
 
+//Using the @entity annotation creates table for the class in your DB
 //You want to give entities names as it's good practice and it makes it easier 
 //when you have longer class names 
 //The default name in the DB is the class name  
@@ -52,6 +53,19 @@ public class Person {
 	)
 	private final String name;
 	
+	@Column(
+			name = "person_email",
+			updatable = true,
+			nullable = false
+	)
+	private String email;
+	
+	@Column(
+			name = "person_password",
+			updatable = true,
+			nullable = false
+	)
+	private String password;
 	
 	@Column(
 			name = "person_id",
@@ -63,14 +77,19 @@ public class Person {
 
 	@Column(
 			name = "person_login_list",
-			nullable = true,
-			updatable = true			
+			updatable = true,
+			columnDefinition = "text[]"
 	)
 	private ArrayList<LoginInformation> loginsList;
-
-
-	public Person(@JsonProperty("name") String name) {
+	
+	
+	//Constructor
+	public Person(@JsonProperty("name") String name,
+				  @JsonProperty("email") String email,
+				  @JsonProperty("password") String password) {
 		this.name = name;
+		this.email = email;
+		this.password = password;
 		this.id = UUID.randomUUID();
 		loginsList = new ArrayList<LoginInformation>();
 		
@@ -83,6 +102,31 @@ public class Person {
 	}
 
 	
+	
+	public String getEmail() {
+		return email;
+	}
+
+
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+
+
+	public String getPassword() {
+		return password;
+	}
+
+
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+
+
 	public ArrayList<LoginInformation> getLoginsList() {
 		return loginsList;
 	}
@@ -104,9 +148,10 @@ public class Person {
 	}
 	
 	
+	
 	@Override
 	public String toString() {
-		return name + "\n" + id;
+		return name + " " + id;
 	}
 	
 	
