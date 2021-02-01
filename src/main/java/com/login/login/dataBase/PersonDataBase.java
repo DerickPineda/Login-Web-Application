@@ -5,7 +5,9 @@ import com.login.login.dataBase.App;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -97,23 +99,37 @@ public class PersonDataBase {
 		}
 	}
 	
+	
 	//Method to return all the people with logins in data base
 	//Will also return their id's with the names
 	public String[] getPeopleInDataBase(){
-		//Get a set containing all the keys from logins(Person objects)
-		Set<UUID> loginsKeys = logins.keySet();
-		//Create an array of Person objects from the set
-		UUID[] keys = loginsKeys.toArray(new UUID[loginsKeys.size()]);
 		
-		//Iterate through and get all the names/ids and put them into another array of String
-		String[] names = new String[keys.length];
-		for(int i = 0; i < names.length; i++) {
-			names[i] = logins.get(keys[i]).toString();
-					
+		String sql = "SELECT person_name FROM person";
+		
+		try {
+			//Establish connection to DB 
+			Connection connect = app.connect();
+			
+			//Create a Statement object to send to the DB
+			Statement statement = connect.createStatement();
+			
+			//Retrieve the result set which should give us the names of everyone in the DB
+			ResultSet result = statement.executeQuery(sql);
+			
+			//If we get this far then we successfully queried the DB
+			System.out.println("Successfully called getPeopleInDataBase()");
+			
+			//Print out the list of people in Database(using Result Set) and return it
+			String[] results = printPeopleInDB(result);
+			
+			return results;
+			
+		}catch(SQLException ex) {
+			System.out.println(ex.getMessage());
 		}
 		
-		//return names[] which contains all the names of the users in the database 
-		return names;
+		return null;
+		
 	}
 	
 	
@@ -145,6 +161,24 @@ public class PersonDataBase {
 		//Login is defined as an String email, String username, String password 
 		//update the person object's private login list
 		logins.get(id).updateLogin(login);
+		
+	}
+	
+	
+	
+	
+	
+	public String[] printPeopleInDB(ResultSet result) throws SQLException {
+		ArrayList<String> peopleInDB = new ArrayList<String>();
+		
+		//Extract all the person names into an array list from the ResultSet
+		while(result.next()) {
+			peopleInDB.add(result.getString("person_name"));
+		}
+		
+		//Convert the array list into a String[] 
+		return peopleInDB.toArray(new String[0]);
+		
 		
 	}
 }
