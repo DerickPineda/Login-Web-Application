@@ -82,16 +82,29 @@ public class Person {
 	)
 	private ArrayList<LoginInformation> loginsList;
 	
+	@Column(
+			name = "person_logins_count",
+			updatable = true
+	)
+	private int loginsCount;
 	
-	//Constructor
+	
+	//Constructors
 	public Person(@JsonProperty("name") String name,
 				  @JsonProperty("email") String email,
-				  @JsonProperty("password") String password) {
+				  @JsonProperty("password") String password,
+				  @JsonProperty("logins_count") int loginsCount) {
 		this.name = name;
 		this.email = email;
 		this.password = password;
 		this.id = UUID.randomUUID();
+		this.loginsCount = 0;
 		loginsList = new ArrayList<LoginInformation>();
+		
+	}
+	
+	public Person(String name, String email, String password) {
+		this(name, email, password, 0);
 		
 	}
 	
@@ -131,6 +144,15 @@ public class Person {
 		return loginsList;
 	}
 	
+	
+	public int getLoginsCount() {
+		return loginsCount;
+	}
+
+	public void setLoginsCount(int loginsCount) {
+		this.loginsCount = loginsCount;
+	}
+
 	
 	//Method to allow person to update their logins
 	public void updateLogin(LoginInformation login) {
