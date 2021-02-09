@@ -39,20 +39,6 @@ import com.login.login.model.Person;
  */
 @Repository("personDataBase")
 public class PersonDataBase {	
-	/*
-	 * @Id
-	 * 
-	 * @SequenceGenerator( name = "login_data_sequence", sequenceName =
-	 * "login_data_sequence" )
-	 * 
-	 * @GeneratedValue( strategy = GenerationType.SEQUENCE, generator =
-	 * "login_data_sequence" )
-	 * 
-	 * @ElementCollection
-	 */
-	//Am currently implementing adding the people/logins to the actual database
-	//Leaving this here for now
-	private Map<UUID, Person> logins = new HashMap<UUID, Person>();
 	
 	private App app = new App();
 	
@@ -64,7 +50,7 @@ public class PersonDataBase {
 		Person tempPerson = new Person(person.getName(), person.getEmail(), person.getPassword());
 		
 		String sql = "INSERT INTO person(person_name, person_email, person_id, person_login_list, "
-				+ "person_password) VALUES(?,?,?,?,?)"; 
+				+ "person_password, person_logins_count) VALUES(?,?,?,?,?,?)"; 
 		
 		/*
 		 * We will take the Person objects Arraylist and turn it into a String[]
@@ -77,10 +63,12 @@ public class PersonDataBase {
 			newLoginList[i] = tempArray.get(i).toString();
 		}
 		
+		
+		//Now we will try to add the person into the DB
 		try {
 			//Establish a connection with the database
 			Connection connect = app.connect();
-			//Using the connnection, make a prepared statement(used to send postgreSQL query/commands)
+			//Using the connection, make a prepared statement(used to send postgreSQL query/commands)
 			//Send the statement to the database
 			PreparedStatement p = connect.prepareStatement(sql);
 			
@@ -90,10 +78,11 @@ public class PersonDataBase {
 			p.setObject(3, tempPerson.getId());
 			p.setObject(4, newLoginList);
 			p.setString(5, tempPerson.getPassword());
-			
+			p.setInt(6, tempPerson.getLoginsCount());
 			//Execute the query
 			p.executeUpdate();
 			
+			System.out.println("Added " + person.getName() + " into the DB");
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -120,7 +109,7 @@ public class PersonDataBase {
 			System.out.println("Successfully called getPeopleInDataBase()");
 			
 			//Print out the list of people in Database(using Result Set) and return it
-			String[] results = printPeopleInDB(result);
+			String[] results = printDataFromDB(result, "person_name");
 			
 			return results;
 			
@@ -135,32 +124,90 @@ public class PersonDataBase {
 	
 	//Method to return the login information for someone 
 	public String[] getLoginInformation(UUID id){
-		//Get ArrayList of person object logins and store them into an ArrayList
-		ArrayList<LoginInformation> personLogins = logins.get(id).getLoginsList();
-		//Check if ArrayList is empty, if so then return a String[] = {"empty"}
-		if(personLogins.size() == 0){
-			String[] loginIsEmpty = {"empty"};
-			return loginIsEmpty;
+		
+		String sql = "SELECT person_login_list FROM person WHERE person_id = '" + id + "'";
+		
+		try {
+			//Connect to the DB
+			Connection connect = app.connect();
+			
+			//Create a statement object to make a DB query
+			Statement statement = connect.createStatement();
+			
+			//Execute the statement
+			ResultSet logins = statement.executeQuery(sql);
+			System.out.println("\nRetrieved person_login_list");
+			
+			//We now want to convert the Result Set into a String[] that we can return
+			String[] loginsList = printDataFromDB(logins,"person_login_list");
+			
+			//Return the String[]
+			return loginsList;
+		}catch(SQLException ex) {
+			System.out.println(ex.getMessage());
+			
 		}
 		
-		//Go through the ArrayList, putting each login into another String[] to return
-		String[] loginInfo = new String[personLogins.size()];
-		for(int i = 0; i < loginInfo.length; i++){
-			loginInfo[i] = personLogins.get(i).toString();
-		}
+		//If we made it here there was an error, return null
+		return null;
 		
-		
-		//Now that we have all the logins as String inside of loginInfo[], return it
-		return loginInfo;
-	
 	}
 	
 	
 	//Method to add new login information 
 	public void updateLoginInformation(UUID id, LoginInformation login) {
-		//Login is defined as an String email, String username, String password 
-		//update the person object's private login list
-		logins.get(id).updateLogin(login);
+	
+		try {
+			//connect to DB
+			Connection connect = app.connect();
+			
+			/*
+			 * Update the person's login count before executing query, this will be to keep
+			 * track of the String[] index in the db
+			 * 
+			 * We first need to find the person in the database, so we will need another prepared statement and statement
+			 */
+			Statement getCountToUpdate = connect.createStatement();
+			String getCountSQL = "SELECT person_logins_count FROM person WHERE person_id = '" + id +"'";
+			
+			ResultSet count = getCountToUpdate.executeQuery(getCountSQL);
+			System.out.println("Obtained person_logins_count");
+			
+			//We now need to convert the ResultSet into an int variable and then update it
+			int updatedCount;
+			
+			//Check to see if our ResultSet has anything, if it does continue, if it does not
+			//Then print out error and exit
+			if(count.next()) {
+				updatedCount = count.getInt("person_logins_count");
+				updatedCount++;
+				
+				//Now we need to update the logins list in the DB using the new index for the array in DB holding the login information
+				String updateCountStatement = "UPDATE person SET person_logins_count = " + updatedCount + " where person_id = '" + id +"'";
+				PreparedStatement updateCount = connect.prepareStatement(updateCountStatement);
+				
+				updateCount.execute();
+				System.out.println("\nUpdated persons_logins_count");
+				
+				
+				//Now that we have updated the count, we need to update the logins list with the given Login Information
+				String updateLoginsSQL = "UPDATE person SET person_login_list[" + updatedCount + "] = '" + login.toString() + "'"
+									   + " WHERE person_id = '" + id + "'";
+				PreparedStatement updateLoginsList = connect.prepareStatement(updateLoginsSQL);
+				
+				//Execute the update
+				updateLoginsList.execute();
+				System.out.println("\nUpdated persons_login_list");
+			
+			} else {
+				System.out.println("\nCould not find count");
+			}
+			
+			
+			
+		}catch(SQLException ex) {
+			System.out.println(ex.getMessage());
+		}
 		
 	}
 	
@@ -168,12 +215,12 @@ public class PersonDataBase {
 	
 	
 	
-	public String[] printPeopleInDB(ResultSet result) throws SQLException {
+	public String[] printDataFromDB(ResultSet result, String columnName) throws SQLException {
 		ArrayList<String> peopleInDB = new ArrayList<String>();
 		
 		//Extract all the person names into an array list from the ResultSet
 		while(result.next()) {
-			peopleInDB.add(result.getString("person_name"));
+			peopleInDB.add(result.getString(columnName));
 		}
 		
 		//Convert the array list into a String[] 
